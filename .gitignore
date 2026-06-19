@@ -31,5 +31,7 @@ e2e-results/
 
 # Editors
 .idea
-
+*.iml
+*.ipr
+*.iws
 .DS_Store

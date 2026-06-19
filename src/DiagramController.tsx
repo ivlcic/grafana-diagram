@@ -7,6 +7,7 @@ import { merge } from 'lodash';
 import mermaid from 'mermaid';
 import React from 'react';
 import { updateDiagramStyle } from 'visualizers/updateDiagramStyle';
+import { buildMetricValueMap, normalizeLabelNewlines, replaceSeriesValuesInContent } from 'visualizers/metricValues';
 import { DiagramOptions, DiagramSeriesModel, DiagramSeriesValue } from './config/types';
 
 const mermaidAPI = mermaid.mermaidAPI;
@@ -146,7 +147,11 @@ export class DiagramPanelController extends React.Component<DiagramPanelControll
       const diagramDefinition = await this.loadDiagramDefinition();
       try {
         const diagramId = `diagram-${this.props.id}`;
-        const interpolated = this.props.replaceVariables(this.contentProcessor(diagramDefinition));
+        const themedContent = this.contentProcessor(diagramDefinition);
+        const grafanaInterpolated = this.props.replaceVariables(themedContent);
+        const metricValueMap = buildMetricValueMap(this.props.data, this.props.options.composites);
+        const withMetricValues = replaceSeriesValuesInContent(grafanaInterpolated, metricValueMap);
+        const interpolated = normalizeLabelNewlines(withMetricValues);
   
         try {
           const { svg, bindFunctions } = await mermaidAPI.render(diagramId, interpolated);

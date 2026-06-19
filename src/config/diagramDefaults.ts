@@ -11,7 +11,7 @@ export const defaultFlowChartConfig: FlowchartDiagramConfig & { useMaxWidth: boo
 };
 
 export const defaultMermaidOptions: MermaidConfig = {
-  // securityLevel: 'loose',
+  securityLevel: 'loose',
   logLevel: 3, //1:debug, 2:info, 3:warn, 4:error, 5:fatal
   //cloneCssStyles: true, // - This options controls whether or not the css rules should be copied into the generated svg
   startOnLoad: false, // - This options controls whether or mermaid starts when the page loads
@@ -81,6 +81,7 @@ export const defaults: DiagramOptions = {
   style: '',
   legend: defaultLegendOptions,
   maxWidth: true,
+  zoom: 1,
   moddedSeriesVal: 0,
   valueName: 'last',
   content: `graph LR

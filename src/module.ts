@@ -209,6 +209,25 @@ const createPanelPlugin = () => {
           defaultValue: defaults.nodeSize.minHeight,
           description: 'The minimum height a matched diagram text node should be',
         })
+        .addBooleanSwitch({
+          name: 'Fit to panel',
+          path: 'maxWidth',
+          defaultValue: defaults.maxWidth,
+          category: ['Display'],
+          description: 'Scale the diagram to fit the panel. Disable to use scrollbars and the Zoom option.',
+        })
+        .addNumberInput({
+          name: 'Zoom',
+          path: 'zoom',
+          defaultValue: defaults.zoom,
+          category: ['Display'],
+          description: 'Scale factor for the diagram. Use values > 1 to enlarge. Requires "Fit to panel" to be disabled.',
+          settings: {
+            min: 0.1,
+            max: 10,
+            step: 0.1,
+          },
+        })
         // Legend Options
         .addBooleanSwitch({
           name: 'Show legend',

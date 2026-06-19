@@ -65,6 +65,7 @@ export interface DiagramOptions {
   content: string;
   contentUrl?: string;
   mode: DiagramPanelMode;
+  zoom: number;
   mermaidServiceUrl: string;
   useBasicAuth: boolean;
   authUsername: string;

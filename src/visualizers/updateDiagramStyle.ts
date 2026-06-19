@@ -1,15 +1,8 @@
-import { DisplayValue, formattedValueToString, LinkModel } from '@grafana/data';
+import { formattedValueToString } from '@grafana/data';
 import { select, Selection } from 'd3';
 import { diagramStyleFormatter } from 'diagramStyleFormatter';
-import { CompositeMetric, DiagramOptions, DiagramSeriesModel, NodeSizeOptions } from '../config/types';
-
-type MetricIndicator = DisplayValue & {
-  metricName: string;
-  valueName: string;
-  isComposite?: boolean;
-  originalName?: string;
-  links?: LinkModel[];
-};
+import { DiagramOptions, DiagramSeriesModel, NodeSizeOptions } from '../config/types';
+import { MetricIndicator, reduceComposites, reduceModels } from './metricValues';
 
 const selectElementById = (container: HTMLElement, id: string): Selection<any, any, any, any> => {
   return select(container.querySelector(`[data-id="${id}"]`));
@@ -101,7 +94,7 @@ const styleD3Shapes = (
   if (div.node()) {
     const divElement = div.node() as HTMLElement;
     resizeGrouping(div, nodeSize);
-    let content = divElement.innerText + `<br/> ${formattedValueToString(indicator)}`;
+    let content = divElement.innerHTML + `<br/> ${formattedValueToString(indicator)}`;
     if (indicator.isComposite) {
       content += `<br/>${indicator.originalName}`;
       divElement.style.marginTop = `-${nodeSize.minHeight / 4}px`;
@@ -240,51 +233,6 @@ const processDiagramSeriesModel = (container: HTMLElement, indicator: MetricIndi
   //console.log('could not find a diagram node with id/text: ' + key);
 };
 
-const reduceComposites = (indicators: MetricIndicator[], composites: CompositeMetric[]): MetricIndicator[] => {
-  return composites
-    .map((c) => {
-      const candidates = c.members.flatMap((m) => {
-        return indicators.filter((i) => i.metricName === m);
-      });
-      if (candidates.length > 0) {
-        const compositeIndicator = candidates.reduce((prev, current) => {
-          const previousValue = isNaN(prev.numeric) ? 0 : prev.numeric;
-          const currentValue = isNaN(current.numeric) ? 0 : current.numeric;
-          const currentIsLower = currentValue < previousValue;
-          if (c.showLowestValue) {
-            return currentIsLower ? current : prev;
-          } else {
-            return currentIsLower ? prev : current;
-          }
-        });
-        compositeIndicator.isComposite = true;
-        compositeIndicator.originalName = compositeIndicator.metricName;
-        compositeIndicator.metricName = c.name;
-        return compositeIndicator;
-      } else {
-        return null;
-      }
-    })
-    .filter((c) => c != null) as any;
-};
-
-const reduceModels = (models: DiagramSeriesModel[]): MetricIndicator[] => {
-  return models
-    .filter((m) => m.valueField.config.custom)
-    .flatMap((m) => {
-      const dv = m.info?.find((dv) => dv.title === m.valueField.config.custom.valueName);
-      if (!dv) {
-        return null;
-      }
-      return {
-        ...dv,
-        metricName: m.label,
-        valueName: dv.title,
-      };
-    })
-    .filter((m) => m != null) as any;
-};
-
 export const updateDiagramStyle = (
   el: HTMLElement,
   models: DiagramSeriesModel[],
@@ -300,12 +248,20 @@ export const updateDiagramStyle = (
   }
 
   const svg = svgNode as HTMLElement;
+  const zoom = options.zoom ?? 1;
+
   if (options.maxWidth) {
     select(svg).style('max-width', '100%').style('max-height', '100%');
   }
 
   if (svg.parentElement && !options.maxWidth) {
-    svg.parentElement.setAttribute('style', 'overflow-y: scroll');
+    svg.parentElement.setAttribute('style', 'overflow: auto; width: 100%; height: 100%;');
+  }
+
+  // Apply zoom scaling. CSS zoom affects layout, so scrollbars appear when the
+  // scaled diagram exceeds the panel size (requires "Fit to panel" disabled).
+  if (zoom !== 1) {
+    select(svg).style('zoom', `${zoom}`).style('transform-origin', '0 0');
   }
 
   indicators.forEach((indicator) => {
